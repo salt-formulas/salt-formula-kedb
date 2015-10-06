@@ -1,0 +1,15 @@
+Django==1.5.12
+South==0.8.1
+django-mptt==0.5.5
+django-extensions==1.2.5
+djangorestframework==2.3.9
+django-assets==0.8
+django-yamlfield==0.4
+requests>=2.0.0
+python-keystoneclient>=0.4.1
+lesscpy>=0.9j
+lockfile>=0.8
+gunicorn==18.0
+setproctitle==1.1.8
+psycopg2
+raven>=4.2.3

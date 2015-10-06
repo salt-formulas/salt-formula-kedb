@@ -1,0 +1,3 @@
+
+include:
+- kedb.server.service
