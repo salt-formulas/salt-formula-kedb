@@ -1,5 +1,4 @@
-{%- set server = pillar.kedb.server %}
-{%- if server.enabled %}
+{%- from "kedb/map.jinja" import server with context %}
 
 include:
 - git
@@ -7,145 +6,99 @@ include:
 
 kedb_packages:
   pkg.installed:
-  - names:
-    - python-pip
-    - python-virtualenv
-    - python-imaging
-    - python-docutils
-    - python-simplejson
-    {%- if grains.os_family == 'Debian' %}
-    - python-tz
-    - python-memcache
-    - build-essential
-    - libssl-dev
-    - libffi-dev
-    - python-dev
-    {%- endif %}
-    {%- if grains.os_family == 'RedHat' %}
-    - python-memcached
-    - gcc
-    - libffi-devel
-    - python-devel 
-    - openssl-devel
-    - MySQL-python
-    {%- endif %}
-    - gettext
-  - require:
-    - pkg: python_packages
-
-/srv/kedb:
-  virtualenv.manage:
-  - system_site_packages: True
-  - requirements: salt://kedb/conf/requirements.txt
-  - require:
-    - pkg: kedb_packages
+  - names: {{ server.pkgs }}
 
 kedb_user:
   user.present:
-  - name: kedb
+  - name: {{ server.user }}
   - system: True
-  - home: /srv/kedb
-  - require:
-    - virtualenv: /srv/kedb
-
-{{ server.source.address }}:
-  git.latest:
-  - target: /srv/kedb/kedb
-  - rev: {{ server.source.rev }}
-  - require:
-    - virtualenv: /srv/kedb
-    - pkg: git_packages
-
-/srv/kedb/site/core/wsgi.py:
-  file:
-  - managed
-  - source: salt://kedb/conf/wsgi.py
-  - mode: 755
-  - template: jinja
-  - require:
-    - file: /srv/kedb/site/core
-
-/srv/kedb/bin/gunicorn_start:
-  file.managed:
-  - source: salt://kedb/conf/gunicorn_start
-  - mode: 700
-  - user: kedb
-  - group: kedb
-  - template: jinja
-  - require:
-    - virtualenv: /srv/kedb
+  - home: {{ server.dir.home }}
 
 kedb_dirs:
   file.directory:
   - names:
-    - /srv/kedb/site/core
-    - /srv/kedb/static
-    - /srv/kedb/logs
-  - user: root
-  - group: root
+    - /etc/kedb
+    - {{ server.dir.base }}
+    - /var/lib/kedb/static
+    - /var/lib/kedb/media
+    - /usr/lib/kedb/bin
+    - /var/log/kedb
+  - user: {{ server.user }}
+  - group: {{ server.group }}
   - mode: 755
   - makedirs: true
   - require:
-    - virtualenv: /srv/kedb
+    - user: kedb_user
 
-/srv/kedb/media:
-  file:
-  - directory
-  - user: kedb
-  - group: kedb
-  - mode: 755
-  - makedirs: true
-  - require:
-    - virtualenv: /srv/kedb
-
-/srv/kedb/site/core/settings.py:
+kedb_log:
   file.managed:
+    - name: /var/log/kedb/django.log
+    - user: {{ server.user }}
+    - group: {{ server.group }}
+    - replace: False
+    - require:
+      - file: kedb_dirs
+
+kedb_git_setup:
+  git.latest:
+  - name: {{ server.source.address }}
+  - target: {{ server.dir.workspace }}
+  - rev: {{ server.source.get('revision', server.source.get('rev', 'master')) }}
+  - require:
+    - pkg: git_packages
+    - user: kedb_user
+  - watch_in:
+    - cmd: kedb_install
+
+kedb_python_virtualenv:
+  virtualenv.manage:
+  - name: {{ server.dir.base }}
+  - requirements: {{ server.dir.workspace }}/requirements.txt
+  - require:
+    - pkg: kedb_packages
+    - git: kedb_git_setup
+
+kedb_install:
+  cmd.wait:
+    - name: {{ server.dir.base }}/bin/python setup.py install
+    - cwd: {{ server.dir.workspace }}
+    - require:
+      - virtualenv: kedb_python_virtualenv
+      - file: kedb_log
+    - watch_in:
+      - cmd: django_migrate_database
+      - cmd: django_collectstatic
+    - require_in:
+      - file: django_conf_settings
+
+kedb_bin_python:
+  file.symlink:
+    - name: /usr/lib/kedb/bin/python
+    - target: {{ server.dir.base }}/bin/python
+
+kedb_bin_manage:
+  file.symlink:
+    - name: {{ server.dir.base }}/bin/manage.py
+    - target: {{ server.dir.workspace }}/bin/manage.py
+
+kedb_bin_gunicorn:
+  file.symlink:
+    - name: {{ server.dir.base }}/bin/gunicorn_start.sh
+    - target: {{ server.dir.workspace }}/bin/gunicorn_start.sh
+
+django_collectstatic:
+  cmd.wait:
+  - name: {{ server.dir.base }}/bin/python {{ server.dir.base }}/bin/manage.py collectstatic --noinput
+  - require:
+    - file: django_conf_settings
+
+django_conf_gunicorn:
+  file.managed:
+  - name: /etc/kedb/gunicorn
   - user: root
-  - group: root
-  - source: salt://kedb/files/settings.py
+  - group: {{ server.group }}
+  - source: salt://kedb/files/gunicorn
   - template: jinja
-  - mode: 644
+  - mode: 640
   - require:
     - file: kedb_dirs
-
-/srv/kedb/site/core/__init__.py:
-  file.managed:
-  - user: root
-  - group: root
-  - template: jinja
-  - mode: 644
-  - require:
-    - file: kedb_dirs
-
-/srv/kedb/site/manage.py:
-  file.managed:
-  - user: root
-  - group: root
-  - source: salt://kedb/conf/manage.py
-  - template: jinja
-  - mode: 755
-  - require:
-    - file: kedb_dirs
-
-sync_database_kedb:
-  cmd.run:
-  - name: python manage.py syncdb --noinput
-  - cwd: /srv/kedb/site
-  - require:
-    - file: /srv/kedb/site/manage.py
-
-migrate_database_kedb:
-  cmd.run:
-  - name: python manage.py migrate --noinput
-  - cwd: /srv/kedb/site
-  - require:
-    - cmd: sync_database_kedb
-
-collect_static_kedb:
-  cmd.run:
-  - name: python manage.py collectstatic --noinput
-  - cwd: /srv/kedb/site
-  - require:
-    - cmd: sync_database_kedb
-
-{%- endif %}
