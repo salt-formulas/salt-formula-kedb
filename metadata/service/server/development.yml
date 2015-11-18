@@ -21,7 +21,7 @@ parameters:
       source:
         engine: git
         address: git@git.tcpcloud.eu:python-apps/django-kedb.git
-        rev: develop
+        rev: master
       cache:
         engine: 'memcached'
         host: '127.0.0.1'
