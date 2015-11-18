@@ -45,6 +45,37 @@ SECRET_KEY = '{{ app.secret_key }}'
 LOCAL_INSTALLED_APPS = (
     'raven.contrib.django.raven_compat',
 )
+{%- else %}
+LOGGING = {
+    'version': 1,
+    # When set to True this will disable all logging except
+    # for loggers specified in this configuration dictionary. Note that
+    # if nothing is specified here and disable_existing_loggers is True,
+    # django.db.backends will still log unless it is disabled explicitly.
+    'disable_existing_loggers': False,
+    'root': {
+        'level': 'WARNING',
+        'handlers': ['sentry'],
+    },
+    'formatters': {
+        'verbose': {
+            'format': '%(asctime)s %(process)d %(levelname)s %(name)s '
+                      '%(message)s'
+        },
+    },
+    'handlers': {
+        'sentry': {
+            'level': 'ERROR',
+            'class': 'raven.contrib.django.raven_compat.handlers.SentryHandler',
+        },
+        'file': {
+            'level': 'DEBUG',
+            'class': 'logging.FileHandler',
+            'filename': '/var/log/kedb/app.log',
+            'formatter': 'verbose',
+        },
+    },
+}
 {%- endif %}
 
 RAVEN_CONFIG = {

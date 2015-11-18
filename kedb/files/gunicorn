@@ -1,0 +1,8 @@
+{%- from "kedb/map.jinja" import server with context %}
+
+USER="{{ server.user }}"
+GROUP="{{ server.group }}"
+BIND_HOST="{{ server.bind.address }}"
+BIND_PORT="{{ server.bind.port }}"
+NUM_WORKERS="{{ server.get('workers', grains.num_cpus * 2 + 1) }}"
+DJANGODIR="{{ server.dir.base }}"

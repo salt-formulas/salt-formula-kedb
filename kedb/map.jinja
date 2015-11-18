@@ -4,11 +4,12 @@
 {%- load_yaml as base_defaults %}
 {%- if source_engine == 'git' %}
 Debian:
+  user: kedb
   group: kedb
   pkgs:
   - python-psycopg2
   dir:
-    base: /srv/kedb/venv
+    base: /srv/kedb
     home: /var/lib/kedb
     workspace: /srv/kedb/workspace
   python_version: '2.7'
