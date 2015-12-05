@@ -1,0 +1,9 @@
+doc:
+  name: KEDB
+  description: Known Error Database
+  role:
+  {%- if pillar.kedb.server is defined %}
+    server:
+      name: server
+      param: {}
+  {%- endif %}
