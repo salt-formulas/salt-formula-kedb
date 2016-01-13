@@ -71,7 +71,7 @@ LOGGING = {
         'file': {
             'level': 'DEBUG',
             'class': 'logging.FileHandler',
-            'filename': '/var/log/kedb/app.log',
+            'filename': '/var/log/kedb/django.log',
             'formatter': 'verbose',
         },
     },
