@@ -1,0 +1,8 @@
+name: kedb
+os: Debian, RedHat
+os_family: Debian, RedHat
+version: 201606
+release: 1
+summary: KEDB salt formula
+description: Install and configure KEDB service.
+top_level_dir: kedb
