@@ -10,6 +10,6 @@ Vcs-Git: https://github.com/tcpcloud/salt-formula-kedb.git
 
 Package: salt-formula-kedb
 Architecture: all
-Depends: ${misc:Depends}, salt-master, reclass
+Depends: ${misc:Depends}
 Description: KEDB salt formula
  Install and configure KEDB service.
