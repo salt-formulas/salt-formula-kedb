@@ -6,6 +6,8 @@ Known Error Database
 Sample pillar
 =============
 
+.. code-block:: yaml
+
     kedb:
       server:
         enabled: true
@@ -16,7 +18,7 @@ Sample pillar
           port: 9753
           protocol: tcp
         source:
-          type: 'git'
+          engine: 'git'
           address: 'git@repo1.robotice.cz:django/django-kedb.git'
           rev: 'master'
         cache:

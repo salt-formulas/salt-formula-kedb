@@ -1,3 +1,8 @@
 name: "kedb"
 version: "0.2"
 source: "https://github.com/salt-formulas/salt-formula-kedb"
+dependencies:
+- name: git
+  source: "https://github.com/salt-formulas/salt-formula-git"
+- name: python
+  source: "https://github.com/salt-formulas/salt-formula-python"
